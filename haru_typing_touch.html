@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <title>ハルちゃん タイピングあそび（タッチ対応）</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111;
+      --panel: rgba(255,255,255,.06);
+      --border: rgba(255,255,255,.14);
+      --fg: #fff;
+      --muted: #aaa;
+      --key: #242424;
+      --key-active: #fff;
+      --key-active-text: #111;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "Noto Sans JP", sans-serif;
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    #app {
+      min-height: 100dvh;
+      padding: clamp(12px, 2.5vw, 28px);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: clamp(12px, 2vw, 22px);
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,.05), transparent 35%),
+        var(--bg);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      color: var(--fg);
+      padding: .65rem .95rem;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: scale(.97);
+    }
+
+    .screen {
+      display: grid;
+      place-items: center;
+      min-height: 30vh;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      background: var(--panel);
+      padding: clamp(22px, 4vw, 48px);
+      overflow: hidden;
+    }
+
+    #typedText {
+      width: 100%;
+      text-align: center;
+      font-size: clamp(3rem, 10vw, 8rem);
+      font-weight: 850;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      letter-spacing: .01em;
+    }
+
+    #placeholder {
+      color: var(--muted);
+      font-size: clamp(1.5rem, 4vw, 2.8rem);
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .keyboard-wrap {
+      width: min(100%, 1200px);
+      margin: 0 auto;
+      overflow-x: auto;
+      padding-bottom: max(4px, env(safe-area-inset-bottom));
+    }
+
+    .keyboard {
+      min-width: 860px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .key {
+      min-width: 56px;
+      height: 56px;
+      padding: 0 10px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--key);
+      color: var(--fg);
+      font-size: 1.2rem;
+      font-weight: 800;
+      transition:
+        transform .05s ease,
+        background .05s ease,
+        color .05s ease;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .key.wide {
+      min-width: 92px;
+    }
+
+    .key.extra-wide {
+      min-width: 126px;
+    }
+
+    .key.space {
+      min-width: 320px;
+    }
+
+    .key.active {
+      background: var(--key-active);
+      color: var(--key-active-text);
+      transform: translateY(2px) scale(.98);
+    }
+
+    .hint {
+      text-align: center;
+      color: var(--muted);
+      font-size: .95rem;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <main id="app">
+    <div class="topbar">
+      <button id="clearButton" type="button">クリア（Delete）</button>
+      <button id="repeatButton" type="button">🔊 読む（Enter）</button>
+      <button id="fullscreenButton" type="button">全画面</button>
+    </div>
+
+    <section class="screen">
+      <div id="placeholder">キーボードで うってみよう<br>タッチでも あそべるよ</div>
+      <div id="typedText" hidden></div>
+    </section>
+
+    <div>
+      <div class="keyboard-wrap">
+        <div class="keyboard" id="keyboard">
+          <div class="row">
+            <div class="key" data-code="Digit1">1</div>
+            <div class="key" data-code="Digit2">2</div>
+            <div class="key" data-code="Digit3">3</div>
+            <div class="key" data-code="Digit4">4</div>
+            <div class="key" data-code="Digit5">5</div>
+            <div class="key" data-code="Digit6">6</div>
+            <div class="key" data-code="Digit7">7</div>
+            <div class="key" data-code="Digit8">8</div>
+            <div class="key" data-code="Digit9">9</div>
+            <div class="key" data-code="Digit0">0</div>
+            <div class="key wide" data-code="Backspace">⌫</div>
+            <div class="key extra-wide" data-code="Delete">CLEAR</div>
+          </div>
+
+          <div class="row">
+            <div class="key" data-code="KeyQ">Q</div>
+            <div class="key" data-code="KeyW">W</div>
+            <div class="key" data-code="KeyE">E</div>
+            <div class="key" data-code="KeyR">R</div>
+            <div class="key" data-code="KeyT">T</div>
+            <div class="key" data-code="KeyY">Y</div>
+            <div class="key" data-code="KeyU">U</div>
+            <div class="key" data-code="KeyI">I</div>
+            <div class="key" data-code="KeyO">O</div>
+            <div class="key" data-code="KeyP">P</div>
+          </div>
+
+          <div class="row">
+            <div class="key" data-code="KeyA">A</div>
+            <div class="key" data-code="KeyS">S</div>
+            <div class="key" data-code="KeyD">D</div>
+            <div class="key" data-code="KeyF">F</div>
+            <div class="key" data-code="KeyG">G</div>
+            <div class="key" data-code="KeyH">H</div>
+            <div class="key" data-code="KeyJ">J</div>
+            <div class="key" data-code="KeyK">K</div>
+            <div class="key" data-code="KeyL">L</div>
+            <div class="key wide" data-code="Enter">Enter</div>
+          </div>
+
+          <div class="row">
+            <div class="key" data-code="KeyZ">Z</div>
+            <div class="key" data-code="KeyX">X</div>
+            <div class="key" data-code="KeyC">C</div>
+            <div class="key" data-code="KeyV">V</div>
+            <div class="key" data-code="KeyB">B</div>
+            <div class="key" data-code="KeyN">N</div>
+            <div class="key" data-code="KeyM">M</div>
+            <div class="key space" data-code="Space">SPACE</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hint">
+        A〜Z・0〜9・SPACE・Backspace・Delete・Enter に対応 / 画面のキーもタッチOK
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const typedText = document.getElementById("typedText");
+    const placeholder = document.getElementById("placeholder");
+    const repeatButton = document.getElementById("repeatButton");
+    const clearButton = document.getElementById("clearButton");
+    const fullscreenButton = document.getElementById("fullscreenButton");
+    const keyboard = document.getElementById("keyboard");
+
+    let text = "";
+
+    const keyNames = {
+      A: "エイ", B: "ビー", C: "シー", D: "ディー", E: "イー",
+      F: "エフ", G: "ジー", H: "エイチ", I: "アイ", J: "ジェイ",
+      K: "ケイ", L: "エル", M: "エム", N: "エヌ", O: "オウ",
+      P: "ピー", Q: "キュー", R: "アール", S: "エス", T: "ティー",
+      U: "ユー", V: "ヴィー", W: "ダブリュー", X: "エックス",
+      Y: "ワイ", Z: "ズィー",
+      "0": "ゼロ", "1": "ワン", "2": "トゥー", "3": "スリー",
+      "4": "フォー", "5": "ファイヴ", "6": "シックス",
+      "7": "セヴン", "8": "エイト", "9": "ナイン",
+      SPACE: "スペース",
+      BACKSPACE: "バックスペース",
+      DELETE: "クリア"
+    };
+
+    function render() {
+      if (text.length === 0) {
+        typedText.hidden = true;
+        placeholder.hidden = false;
+        typedText.textContent = "";
+      } else {
+        placeholder.hidden = true;
+        typedText.hidden = false;
+        typedText.textContent = text;
+      }
+    }
+
+    function speakJa(textToSpeak) {
+      if (!("speechSynthesis" in window)) return;
+
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.lang = "ja-JP";
+      utterance.rate = 0.8;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const japaneseVoice = voices.find(v => /^ja/i.test(v.lang));
+      if (japaneseVoice) utterance.voice = japaneseVoice;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function speakEn(textToSpeak) {
+      if (!textToSpeak.trim()) return;
+      if (!("speechSynthesis" in window)) return;
+
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.lang = "en-US";
+      utterance.rate = 0.5;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const englishVoice =
+        voices.find(v => /^en-US/i.test(v.lang)) ||
+        voices.find(v => /^en/i.test(v.lang));
+
+      if (englishVoice) utterance.voice = englishVoice;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function lightKey(code) {
+      const key = document.querySelector(`[data-code="${code}"]`);
+      if (!key) return;
+
+      key.classList.add("active");
+      clearTimeout(key._offTimer);
+      key._offTimer = setTimeout(() => {
+        key.classList.remove("active");
+      }, 150);
+    }
+
+    function appendCharacter(char) {
+      text += char;
+      render();
+    }
+
+    function processCode(code) {
+      lightKey(code);
+
+      if (/^Key[A-Z]$/.test(code)) {
+        const char = code.replace("Key", "");
+        appendCharacter(char);
+        speakJa(keyNames[char]);
+        return;
+      }
+
+      if (/^Digit[0-9]$/.test(code)) {
+        const char = code.replace("Digit", "");
+        appendCharacter(char);
+        speakJa(keyNames[char]);
+        return;
+      }
+
+      if (code === "Space") {
+        if (text && !text.endsWith(" ")) {
+          appendCharacter(" ");
+        }
+        speakJa(keyNames.SPACE);
+        return;
+      }
+
+      if (code === "Backspace") {
+        text = text.slice(0, -1);
+        render();
+        speakJa(keyNames.BACKSPACE);
+        return;
+      }
+
+      if (code === "Delete") {
+        text = "";
+        render();
+        speakJa(keyNames.DELETE);
+        return;
+      }
+
+      if (code === "Enter") {
+        speakEn(text);
+      }
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+
+      const code = event.code;
+
+      if (
+        /^Key[A-Z]$/.test(code) ||
+        /^Digit[0-9]$/.test(code) ||
+        code === "Space" ||
+        code === "Backspace" ||
+        code === "Delete" ||
+        code === "Enter"
+      ) {
+        event.preventDefault();
+        processCode(code);
+      }
+    });
+
+    keyboard.addEventListener("pointerdown", (event) => {
+      const key = event.target.closest(".key");
+      if (!key) return;
+
+      event.preventDefault();
+      processCode(key.dataset.code);
+    });
+
+    repeatButton.addEventListener("click", () => {
+      speakEn(text);
+    });
+
+    clearButton.addEventListener("click", () => {
+      text = "";
+      render();
+      speakJa("クリア");
+    });
+
+    fullscreenButton.addEventListener("click", async () => {
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        } else {
+          await document.exitFullscreen();
+        }
+      } catch {}
+    });
+
+    document.addEventListener("fullscreenchange", () => {
+      fullscreenButton.textContent =
+        document.fullscreenElement ? "戻る" : "全画面";
+    });
+
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+
+    render();
+  </script>
+</body>
+</html>
